@@ -60,7 +60,7 @@ classDiagram
 
 During the review of my initial design, I made some small changes to `pawpal_system.py`. I implemented methods that were previously empty, such as updating the owner's available time and preferences, adding or removing pet tasks, and updating task details.
 
-I made these changes because the methods were only placeholders and could not perform any actions. These improvements allow each class to handle its responsibilities properly. I kept the original four classes and did not change my UML diagram because the overall structure remained the same. The scheduling methods are still unimplemented.
+I made these changes because the methods were only placeholders and could not perform any actions. These improvements allow each class to handle its responsibilities properly. During the initial design review, the scheduling methods were still unimplemented, but I implemented them later. I kept the original four classes and did not change my UML diagram because the overall structure remained the same.
 
 ---
 
@@ -68,13 +68,11 @@ I made these changes because the methods were only placeholders and could not pe
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
+The scheduler gathers tasks from all of the owner's pets. It skips completed tasks and tasks with non-positive durations, sorts the remaining tasks by priority, and schedules tasks that fit within the available time. It does not currently use the owner's preferences or task frequency. I treated priority as most important because urgent pet care should come first.
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+The scheduler handles tasks in priority order, so a lower-priority task may not fit after higher-priority tasks are scheduled. This is a reasonable tradeoff because urgent care should come first, and the plan still respects the owner's available time.
 
 ---
 
@@ -86,9 +84,9 @@ I used an AI coding assistant to help design and implement my PawPal+ project. A
 
 **b. Judgment and verification**
 
-One suggestion I did not accept immediately was implementing additional functionality while I was still working on the class skeletons. I wanted to follow the assignment steps, so I reviewed the suggested changes before continuing. I kept the four original classes and made sure the Scheduler retrieved tasks from all pets using Owner.get_all_tasks().
+One suggestion I did not accept immediately was implementing additional functionality while I was still working on the class skeletons. I wanted to follow the assignment steps, so I reviewed the suggested changes before continuing and implemented the functionality later. I kept the four original classes and made sure the Scheduler retrieved tasks from all pets using Owner.get_all_tasks().
 
-I verified the implementation by running main.py and checking the generated daily schedule. I also used pytest to test task completion and task addition. These checks helped me confirm that the implemented methods behaved as expected.
+I verified the implementation by running `main.py` and checking the generated daily schedule. I also ran pytest to check task completion and task addition. The demo included tasks from two pets, displayed them in priority order, and scheduled 60 minutes within the owner's 60 available minutes. Both tests passed.
 
 ---
 
@@ -96,13 +94,11 @@ I verified the implementation by running main.py and checking the generated dail
 
 **a. What you tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+I tested that a task starts as incomplete and becomes completed after calling `mark_completed()`. I also tested that adding a task increases a pet's task count. These tests check that two basic task behaviors work as expected. The command-line demo also showed the Scheduler creating a plan from tasks belonging to both pets.
 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+I am somewhat confident because the demo runs and the two tests pass, but the tests do not directly cover the Scheduler's edge cases. Next, I would test completed tasks, non-positive task durations, no tasks, zero or negative available time, and tasks that do not fit or leave time for a later task.
 
 ---
 
@@ -110,12 +106,12 @@ I verified the implementation by running main.py and checking the generated dail
 
 **a. What went well**
 
-- What part of this project are you most satisfied with?
+I am most satisfied with the terminal demo because it makes the generated schedule and the Scheduler's explanation easy to see.
 
 **b. What you would improve**
 
-- If you had another iteration, what would you improve or redesign?
+In another iteration, I would improve the Scheduler to consider owner preferences or task frequency, which it does not currently use.
 
 **c. Key takeaway**
 
-- What is one important thing you learned about designing systems or working with AI on this project?
+I learned that AI is most useful when I review its suggestions and verify the results by running the program and tests.

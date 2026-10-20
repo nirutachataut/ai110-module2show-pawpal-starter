@@ -1,4 +1,4 @@
-"""Class skeletons for the PawPal+ pet care scheduling system."""
+"""Core classes and scheduling logic."""
 
 from __future__ import annotations
 
