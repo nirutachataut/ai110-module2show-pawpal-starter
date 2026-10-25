@@ -146,10 +146,41 @@ if st.button("Add task", disabled=selected_pet is None):
     st.session_state.plan_explanation = ""
     st.session_state.conflict_warnings = []
 
-if owner.get_all_tasks():
+all_tasks = owner.get_all_tasks()
+if all_tasks:
     st.write("Current tasks:")
+    filter_col1, filter_col2 = st.columns(2)
+    with filter_col1:
+        pet_filter_options = ["All pets"] + list(
+            dict.fromkeys(pet.name for pet in owner.pets)
+        )
+        pet_filter = st.selectbox("Filter by pet", pet_filter_options)
+    with filter_col2:
+        status_filter = st.selectbox(
+            "Filter by status", ["All", "Pending", "Completed"]
+        )
+
+    filtered_tasks = owner.filter_tasks(
+        pet_name=None if pet_filter == "All pets" else pet_filter,
+        completed={
+            "All": None,
+            "Pending": False,
+            "Completed": True,
+        }[status_filter],
+    )
+    filtered_task_ids = {id(task) for task in filtered_tasks}
+    displayed_task_ids: set[int] = set()
+
     for pet in owner.pets:
+        if pet_filter != "All pets" and pet.name != pet_filter:
+            continue
         for task in pet.get_tasks():
+            if (
+                id(task) not in filtered_task_ids
+                or id(task) in displayed_task_ids
+            ):
+                continue
+            displayed_task_ids.add(id(task))
             due_date_text = task.due_date.isoformat() if task.due_date else "No due date"
             scheduled_time_text = task.scheduled_time or "No time"
             st.write(
@@ -174,6 +205,8 @@ if owner.get_all_tasks():
                 st.session_state.plan_explanation = ""
                 st.session_state.conflict_warnings = []
                 st.rerun()
+    if not filtered_tasks:
+        st.info("No tasks match the selected filters.")
 else:
     st.info("No tasks yet. Add one above.")
 

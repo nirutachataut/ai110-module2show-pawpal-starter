@@ -6,6 +6,17 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 
 
+def _parse_scheduled_time(value: str | None) -> time | None:
+    """Return a valid zero-padded HH:MM time, or None for invalid input."""
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed_time = datetime.strptime(value, "%H:%M").time()
+    except ValueError:
+        return None
+    return parsed_time if parsed_time.strftime("%H:%M") == value else None
+
+
 class Owner:
     """Represent a pet owner, their availability, preferences, and pets."""
 
@@ -49,17 +60,20 @@ class Owner:
                 False means pending.
 
         Returns:
-            A new list of matching Task objects.
+            A new list of matching Task objects, with repeated references
+            included only once.
         """
         matching_tasks: list[Task] = []
+        seen_task_ids: set[int] = set()
         for pet in self.pets:
             if pet_name is not None and pet.name != pet_name:
                 continue
-            matching_tasks.extend(
-                task
-                for task in pet.get_tasks()
-                if completed is None or task.completed is completed
-            )
+            for task in pet.get_tasks():
+                if id(task) in seen_task_ids:
+                    continue
+                if completed is None or task.completed is completed:
+                    matching_tasks.append(task)
+                    seen_task_ids.add(id(task))
         return matching_tasks
 
     def set_available_time(self, available_time: int) -> None:
@@ -184,19 +198,19 @@ class Scheduler:
         return sorted(tasks, key=lambda task: task.priority, reverse=True)
 
     def sort_by_time(self, tasks: list[Task]) -> list[Task]:
-        """Sort tasks by HH:MM scheduled time, placing untimed tasks last.
+        """Sort tasks by valid HH:MM time, placing missing or invalid times last.
 
         Args:
             tasks: Tasks to sort.
 
         Returns:
-            A new list ordered from earliest to latest scheduled time.
+            A new list ordered chronologically without changing ``tasks``.
         """
         return sorted(
             tasks,
             key=lambda task: (
-                task.scheduled_time is None,
-                task.scheduled_time or "",
+                _parse_scheduled_time(task.scheduled_time) is None,
+                _parse_scheduled_time(task.scheduled_time) or time.min,
             ),
         )
 
@@ -220,11 +234,8 @@ class Scheduler:
                 or task.duration_minutes <= 0
             ):
                 continue
-            try:
-                start_time = datetime.strptime(task.scheduled_time, "%H:%M").time()
-            except ValueError:
-                continue
-            if start_time.strftime("%H:%M") != task.scheduled_time:
+            start_time = _parse_scheduled_time(task.scheduled_time)
+            if start_time is None:
                 continue
 
             try:

@@ -42,6 +42,13 @@ buddy_walk = Task(
     due_date=date(2025, 1, 2),
     scheduled_time="09:00",
 )
+buddy_medicine = Task(
+    title="Give Buddy Medicine",
+    duration_minutes=5,
+    priority=2,
+    due_date=date(2025, 1, 2),
+    scheduled_time="09:00",
+)
 luna_feeding = Task(
     title="Feed Luna",
     duration_minutes=10,
@@ -49,11 +56,20 @@ luna_feeding = Task(
     due_date=date(2025, 1, 2),
     scheduled_time="09:15",
 )
+back_to_back_task = Task(
+    title="Brush Luna",
+    duration_minutes=10,
+    priority=1,
+    due_date=date(2025, 1, 2),
+    scheduled_time="09:30",
+)
 buddy.add_task(feeding)
 buddy.add_task(walking)
 buddy.add_task(buddy_walk)
+buddy.add_task(buddy_medicine)
 luna.add_task(grooming)
 luna.add_task(luna_feeding)
+luna.add_task(back_to_back_task)
 
 print("Recurring Tasks")
 print("---------------")
@@ -78,6 +94,11 @@ for task in scheduler.sort_by_time(owner.get_all_tasks()):
 print("\nTasks Filtered by Pet Name (Buddy)")
 print("-----------------------------------")
 for task in owner.filter_tasks(pet_name="Buddy"):
+    print(task.title)
+
+print("\nTasks Filtered by Pet Name (Luna)")
+print("----------------------------------")
+for task in owner.filter_tasks(pet_name="Luna"):
     print(task.title)
 
 print("\nCompleted Tasks")

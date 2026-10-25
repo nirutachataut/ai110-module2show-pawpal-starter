@@ -30,11 +30,25 @@ def test_sort_by_time_places_untimed_tasks_last():
     late_task = Task("Late", 10, 3, scheduled_time="18:00")
     untimed_task = Task("Untimed", 10, 1)
     early_task = Task("Early", 10, 1, scheduled_time="07:30")
+    original_tasks = [late_task, untimed_task, early_task]
 
-    sorted_tasks = scheduler.sort_by_time([late_task, untimed_task, early_task])
+    sorted_tasks = scheduler.sort_by_time(original_tasks)
 
     assert sorted_tasks == [early_task, late_task, untimed_task]
+    assert original_tasks == [late_task, untimed_task, early_task]
     assert scheduler.sort_tasks([early_task, late_task]) == [late_task, early_task]
+
+
+def test_sort_by_time_places_invalid_times_last_and_handles_empty_lists():
+    scheduler = Scheduler(Owner(name="Alex", available_time=60, preferences=[]))
+    invalid_task = Task("Invalid", 10, 1, scheduled_time="25:00")
+    non_padded_task = Task("Non-padded", 10, 1, scheduled_time="8:00")
+    valid_task = Task("Valid", 10, 1, scheduled_time="08:00")
+
+    assert scheduler.sort_by_time(
+        [invalid_task, non_padded_task, valid_task]
+    ) == [valid_task, invalid_task, non_padded_task]
+    assert scheduler.sort_by_time([]) == []
 
 
 def test_filter_tasks_by_pet_and_completion_status():
@@ -58,6 +72,17 @@ def test_filter_tasks_by_pet_and_completion_status():
     assert owner.filter_tasks(completed=False) == [pending_task, luna_task]
     assert owner.filter_tasks(pet_name="Buddy", completed=False) == [pending_task]
     assert owner.get_all_tasks() == original_tasks
+
+
+def test_filter_tasks_does_not_return_duplicate_task_references():
+    owner = Owner(name="Alex", available_time=60, preferences=[])
+    buddy = Pet(name="Buddy", species="dog")
+    task = Task("Walk Buddy", 30, 3)
+    buddy.add_task(task)
+    owner.add_pet(buddy)
+    owner.add_pet(buddy)
+
+    assert owner.filter_tasks() == [task]
 
 
 def test_filter_tasks_returns_empty_list_when_no_tasks_match():
@@ -84,7 +109,7 @@ def test_daily_task_completion_creates_next_day_occurrence():
         3,
         frequency="daily",
         scheduled_time="08:30",
-        due_date=date(2025, 1, 1),
+        due_date=date(2026, 10, 25),
     )
     pet.add_task(task)
 
@@ -92,7 +117,7 @@ def test_daily_task_completion_creates_next_day_occurrence():
 
     assert task.completed is True
     assert next_task is not None
-    assert next_task.due_date == date(2025, 1, 2)
+    assert next_task.due_date == date(2026, 10, 26)
     assert next_task.completed is False
     assert next_task.title == task.title
     assert next_task.duration_minutes == task.duration_minutes
@@ -109,14 +134,14 @@ def test_weekly_task_completion_creates_next_week_occurrence():
         20,
         2,
         frequency="weekly",
-        due_date=date(2025, 1, 1),
+        due_date=date(2026, 10, 25),
     )
     pet.add_task(task)
 
     next_task = pet.complete_task(task)
 
     assert next_task is not None
-    assert next_task.due_date == date(2025, 1, 8)
+    assert next_task.due_date == date(2026, 11, 1)
     assert next_task.completed is False
 
 
