@@ -28,6 +28,35 @@ Your final app should:
 
 `Owner.get_all_tasks()` gathers tasks from every pet so the Scheduler can consider them together. The Scheduler sorts tasks by priority and adds tasks that fit within the owner's available time. `main.py` demonstrates this by creating pets and tasks, generating a daily plan, and printing the schedule and explanation.
 
+## Features
+
+- **Owner and pet management:** Enter owner information and add pets in the
+  Streamlit interface. `Owner.add_pet()` stores each `Pet`.
+- **Pet care task management:** Add tasks with a title, duration, priority,
+  due date, scheduled time, and recurrence frequency. Tasks are stored on the
+  selected `Pet` with `Pet.add_task()` and remain available in session state.
+- **Chronological sorting:** `Scheduler.sort_by_time()` sorts valid scheduled
+  times from earliest to latest. Tasks without a valid time appear last.
+- **Task filtering:** `Owner.filter_tasks()` filters by pet name, completed
+  state, or both; the Streamlit task table updates to match the selected
+  filters.
+- **Daily recurrence:** `Pet.complete_task()` creates the next daily task
+  occurrence one day after its due date.
+- **Weekly recurrence:** `Pet.complete_task()` creates the next weekly
+  occurrence seven days after its due date.
+- **Conflict detection:** `Scheduler.detect_conflicts()` detects overlapping
+  pending tasks on the same date. The Streamlit app displays warnings without
+  preventing task entry.
+- **Streamlit task management:** Add pets and tasks, review filtered tasks,
+  mark pending tasks complete, and generate a daily plan with an explanation.
+- **Automated testing:** `tests/test_pawpal.py` covers core object behavior
+  and scheduling algorithms.
+
+## Final UML Class Diagram
+
+The final Mermaid diagram reflects the implemented classes and relationships:
+[diagrams/uml_final.mmd](diagrams/uml_final.mmd).
+
 ## Getting started
 
 ### Setup
@@ -47,6 +76,22 @@ pip install -r requirements.txt
 5. Add tests to verify key behaviors.
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
+
+### Run the Application
+
+Install the declared dependencies using the setup commands above, then start
+the terminal demo or Streamlit interface:
+
+```bash
+python main.py
+streamlit run app.py
+```
+
+Run the automated tests with:
+
+```bash
+python -m pytest
+```
 
 ## 🖥️ Sample Output
 
@@ -164,7 +209,7 @@ collected 22 items
 
 tests/test_pawpal.py ......................                              [100%]
 
-============================== 22 passed in 0.03s ==============================
+============================== 22 passed in 0.02s ==============================
 ```
 
 ### Confidence Level
@@ -251,7 +296,7 @@ streamlit run app.py
 Run the automated tests:
 
 ```bash
-pytest
+python -m pytest
 ```
 
 The terminal demo shows the sorted tasks, Buddy and Luna filters, daily and
@@ -282,11 +327,54 @@ Scheduling conflict: Walk Buddy (09:00-09:30) overlaps with Give Buddy Medicine 
 Scheduling conflict: Walk Buddy (09:00-09:30) overlaps with Feed Luna (09:15-09:25).
 ```
 
-## 📸 Demo Walkthrough
+## Demo Walkthrough
 
-1. Open a terminal in the project folder.
-2. Activate the project environment if you are using one.
-3. Run `python main.py`.
-4. Read the sorted tasks, recurrence examples, daily plan, and any scheduling conflict warnings.
+1. Start the interface from the project folder with `streamlit run app.py`.
+2. Enter the owner's name, available time, and preferences in the owner
+   information fields.
+3. Enter `Buddy` as the pet name, choose `dog`, and select **Add pet**.
+4. Enter `Luna` as the pet name, choose `cat`, and select **Add pet**.
+5. Add a `Feeding Buddy` task, choose Buddy, and set its duration, priority,
+   due date, and scheduled time.
+6. Add a `Walking Luna` task and choose Luna. Set a time that overlaps the
+   feeding task to see conflict detection in the task/schedule view.
+7. Review the saved task table, which is sorted chronologically; each row
+   includes pet, due date, time, duration, priority, frequency, and status.
+8. Use **Filter by pet** and **Filter by status** to show all tasks, one pet's
+   tasks, pending tasks, completed tasks, or a combination.
+9. Select a pending daily or weekly task and click **Complete selected task**.
+   Its next occurrence is shown in the table with the next due date.
+10. Add another task at an overlapping time, then review the `st.warning()`
+    conflict message. Task entry remains enabled.
+11. Select **Generate schedule** to see the tasks selected within the owner's
+    available time and the Scheduler's explanation.
+
+The terminal demo can be run separately with `python main.py`. These excerpts
+are from its actual output:
+
+```text
+Completed 'Feeding Buddy'; next due: 2025-01-02
+Completing it again creates another task: False
+Completed 'Grooming Luna'; next due: 2025-01-08
+
+Tasks Sorted by Scheduled Time
+-------------------------------
+07:00 (No due date) - Walking Buddy
+08:30 (2025-01-01) - Feeding Buddy
+08:30 (2025-01-02) - Feeding Buddy
+09:00 (2025-01-02) - Walk Buddy
+
+Tasks Filtered by Pet Name (Luna)
+----------------------------------
+Grooming Luna
+Feed Luna
+Brush Luna
+Grooming Luna
+
+Scheduling Conflict Warnings
+----------------------------
+Scheduling conflict: Walk Buddy (09:00-09:30) overlaps with Give Buddy Medicine (09:00-09:05).
+Scheduling conflict: Walk Buddy (09:00-09:30) overlaps with Feed Luna (09:15-09:25).
+```
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->

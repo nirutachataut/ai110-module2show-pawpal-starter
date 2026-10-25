@@ -100,13 +100,40 @@ I used an AI coding assistant to help design and implement my PawPal+ project. A
 
 **b. Judgment and verification**
 
-One suggestion I did not accept immediately was implementing additional functionality while I was still working on the class skeletons. I wanted to follow the assignment steps, so I reviewed the suggested changes before continuing and implemented the functionality later. I kept the four original classes and made sure the Scheduler retrieved tasks from all pets using Owner.get_all_tasks().
+One suggestion I did not accept immediately was implementing additional
+functionality while I was still working on the class skeletons. I wanted to
+follow the assignment steps, so I reviewed the suggested changes and delayed
+those features until the relevant phase. I also kept the conflict algorithm
+readable with a direct pairwise comparison instead of adding a more complex
+optimization for large schedules. I kept the four original classes and
+verified that the Scheduler retrieves tasks from all pets using
+`Owner.get_all_tasks()`.
 
 I verified the implementation by running `main.py` and the full pytest suite.
 The demo includes tasks from two pets, sorting and filtering, recurring task
 examples, a generated schedule, and conflict warnings. The tests cover those
 behaviors along with compatibility for the existing class methods and task
 constructors.
+
+**c. AI coding assistant features**
+
+The most useful assistance was exploring the existing files before making
+changes, checking the real constructors and methods, and suggesting focused
+tests for edge cases. AI also helped connect the existing backend methods to
+Streamlit controls and update the README and UML. I treated suggestions as
+ideas to verify: I checked the source, ran the tests, and kept the changes
+small enough to understand.
+
+**d. Separate chat sessions**
+
+The project work was organized by topic: backend classes, scheduling
+algorithms, automated tests, and final UI/documentation integration. Keeping
+those topics separate made it easier to focus on one part and then verify how
+it connected to the rest. I do not have enough evidence to say whether each
+topic was handled in a separate AI chat session.
+
+> TODO: Add my own genuine example of how I used separate AI chat sessions,
+> or revise this paragraph if I worked in one continuous session.
 
 ---
 
@@ -134,4 +161,15 @@ In another iteration, I would improve the Scheduler to consider owner preference
 
 **c. Key takeaway**
 
-I learned that AI is most useful when I review its suggestions and verify the results by running the program and tests.
+I learned that AI is most useful when I review its suggestions and verify the
+results by running the program and tests.
+
+**d. Staying the lead architect**
+
+AI can draft code and suggest designs, but I need to understand how the
+classes relate and why a method belongs on `Owner`, `Pet`, or `Scheduler`.
+Checking the real method definitions and testing the behavior helped me avoid
+documenting features that were not in the code. I also learned to value
+readability and maintainability rather than accepting a complicated solution
+just because it appears more efficient. I remain responsible for the final
+design decisions and for making sure the project meets its requirements.

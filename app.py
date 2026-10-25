@@ -20,6 +20,7 @@ owner = st.session_state.owner
 st.session_state.setdefault("daily_plan", [])
 st.session_state.setdefault("plan_explanation", "")
 st.session_state.setdefault("conflict_warnings", [])
+st.session_state.setdefault("completion_message", "")
 st.session_state.setdefault("owner_name", owner.name)
 st.session_state.setdefault("available_time", owner.available_time)
 st.session_state.setdefault("owner_preferences", owner.preferences)
@@ -141,14 +142,28 @@ if st.button("Add task", disabled=selected_pet is None):
         due_date=due_date,
     )
     owner.pets[selected_pet].add_task(task)
-    st.success(f"Added '{task.title}' to {owner.pets[selected_pet].name}'s tasks.")
+    task_conflicts = Scheduler(owner).detect_conflicts()
+    if task_conflicts:
+        st.info(
+            f"Added '{task.title}' to {owner.pets[selected_pet].name}'s tasks. "
+            "Review the scheduling conflict warning below."
+        )
+    else:
+        st.success(
+            f"Added '{task.title}' to {owner.pets[selected_pet].name}'s tasks. "
+            "No scheduling conflicts found."
+        )
     st.session_state.daily_plan = []
     st.session_state.plan_explanation = ""
     st.session_state.conflict_warnings = []
 
 all_tasks = owner.get_all_tasks()
+if st.session_state.completion_message:
+    st.success(st.session_state.completion_message)
+    st.session_state.completion_message = ""
+
 if all_tasks:
-    st.write("Current tasks:")
+    st.write("Current tasks, sorted by scheduled time:")
     filter_col1, filter_col2 = st.columns(2)
     with filter_col1:
         pet_filter_options = ["All pets"] + list(
@@ -168,45 +183,63 @@ if all_tasks:
             "Completed": True,
         }[status_filter],
     )
-    filtered_task_ids = {id(task) for task in filtered_tasks}
-    displayed_task_ids: set[int] = set()
-
+    task_pet_lookup = {}
     for pet in owner.pets:
         if pet_filter != "All pets" and pet.name != pet_filter:
             continue
         for task in pet.get_tasks():
-            if (
-                id(task) not in filtered_task_ids
-                or id(task) in displayed_task_ids
-            ):
-                continue
-            displayed_task_ids.add(id(task))
-            due_date_text = task.due_date.isoformat() if task.due_date else "No due date"
-            scheduled_time_text = task.scheduled_time or "No time"
-            st.write(
-                f"- {pet.name} ({pet.species}): {task.title} - "
-                f"{task.duration_minutes} minutes (priority {task.priority}), "
-                f"{due_date_text} at {scheduled_time_text}, {task.frequency}"
-            )
-            if st.button(
-                f"Complete {task.title}",
-                key=f"complete_{id(pet)}_{id(task)}",
-                disabled=task.completed,
-            ):
-                next_task = pet.complete_task(task)
-                if next_task is None:
-                    st.success(f"Marked '{task.title}' complete.")
-                else:
-                    st.success(
-                        f"Marked '{task.title}' complete. "
-                        f"Next occurrence is due {next_task.due_date}."
-                    )
-                st.session_state.daily_plan = []
-                st.session_state.plan_explanation = ""
-                st.session_state.conflict_warnings = []
-                st.rerun()
-    if not filtered_tasks:
+            task_pet_lookup.setdefault(id(task), pet)
+
+    sorted_tasks = Scheduler(owner).sort_by_time(filtered_tasks)
+    task_rows = [
+        {
+            "Pet": task_pet_lookup[id(task)].name,
+            "Task": task.title,
+            "Due date": task.due_date.isoformat() if task.due_date else "Not set",
+            "Scheduled time": task.scheduled_time or "Not set",
+            "Duration (minutes)": task.duration_minutes,
+            "Priority": task.priority,
+            "Frequency": task.frequency,
+            "Status": "Completed" if task.completed else "Pending",
+        }
+        for task in sorted_tasks
+    ]
+    if task_rows:
+        st.dataframe(task_rows, hide_index=True, width="stretch")
+    else:
         st.info("No tasks match the selected filters.")
+
+    pending_tasks = [task for task in sorted_tasks if not task.completed]
+    if pending_tasks:
+        st.caption("Complete a pending task to mark it done or create its next occurrence.")
+        task_index = st.selectbox(
+            "Task to complete",
+            options=range(len(pending_tasks)),
+            format_func=lambda index: (
+                f"{task_pet_lookup[id(pending_tasks[index])].name}: "
+                f"{pending_tasks[index].title}"
+            ),
+            key="task_to_complete",
+        )
+        if st.button("Complete selected task"):
+            task = pending_tasks[task_index]
+            pet = task_pet_lookup[id(task)]
+            next_task = pet.complete_task(task)
+            if next_task is None:
+                st.session_state.completion_message = (
+                    f"Marked '{task.title}' complete."
+                )
+            else:
+                st.session_state.completion_message = (
+                    f"Marked '{task.title}' complete. "
+                    f"Next occurrence is due {next_task.due_date}."
+                )
+            st.session_state.daily_plan = []
+            st.session_state.plan_explanation = ""
+            st.session_state.conflict_warnings = []
+            st.rerun()
+    else:
+        st.info("No pending tasks match the selected filters.")
 else:
     st.info("No tasks yet. Add one above.")
 
@@ -221,6 +254,30 @@ if st.button("Generate schedule"):
     st.session_state.plan_explanation = scheduler.explain_plan()
     st.session_state.conflict_warnings = scheduler.detect_conflicts()
 
+current_conflicts = list(dict.fromkeys(Scheduler(owner).detect_conflicts()))
+if current_conflicts:
+    st.write("Scheduling conflict warnings")
+    for warning in current_conflicts:
+        conflicting_pet_names = []
+        for pet in owner.pets:
+            for task in pet.get_tasks():
+                if (
+                    task.scheduled_time
+                    and f"{task.title} ({task.scheduled_time}-" in warning
+                    and pet.name not in conflicting_pet_names
+                ):
+                    conflicting_pet_names.append(pet.name)
+        pet_note = (
+            f" Pets involved: {', '.join(conflicting_pet_names)}."
+            if conflicting_pet_names
+            else ""
+        )
+        st.warning(f"{warning}{pet_note}")
+elif all_tasks:
+    st.info("No scheduling conflicts found.")
+else:
+    st.info("Add scheduled tasks to check for conflicts.")
+
 if st.session_state.daily_plan:
     st.write("Today's Schedule")
     for task in st.session_state.daily_plan:
@@ -232,11 +289,3 @@ if st.session_state.daily_plan:
 if st.session_state.plan_explanation:
     st.write("Plan explanation")
     st.write(st.session_state.plan_explanation)
-
-if "conflict_warnings" in st.session_state:
-    st.write("Scheduling conflict warnings")
-    if st.session_state.conflict_warnings:
-        for warning in st.session_state.conflict_warnings:
-            st.warning(warning)
-    else:
-        st.write("No scheduling conflicts found.")
