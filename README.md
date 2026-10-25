@@ -124,30 +124,58 @@ Scheduling conflict: Walk Buddy (09:00-09:30) overlaps with Give Buddy Medicine 
 Scheduling conflict: Walk Buddy (09:00-09:30) overlaps with Feed Luna (09:15-09:25).
 ```
 
-## 🧪 Testing PawPal+
+## Testing PawPal+
+
+### How to Run Tests
+
+From the project root, run the full automated test suite with:
 
 ```bash
-# Run the full test suite:
-pytest
-
-# Run with coverage:
-pytest --cov
+python -m pytest
 ```
 
-Sample test output:
+### Test Coverage
 
-```
+The tests in `tests/test_pawpal.py` cover:
+
+- Owner pet addition, Pet task addition, task completion state, and empty owners
+  or pets.
+- Chronological sorting, out-of-order and equal times, missing or invalid
+  times, empty lists, and preserving the input list.
+- Filtering by pet and completion status, combined filters, no filters,
+  duplicate references, and no matching tasks.
+- Daily and weekly recurring tasks, due-date calculations, preserved task
+  details, non-recurring tasks, and repeated completion.
+- Conflict warnings for same-time and overlapping tasks, including different
+  pets; back-to-back tasks, different dates, completed tasks, invalid or
+  missing scheduling information, empty owners, and duplicate references.
+
+### Successful Test Results
+
+Actual output from `python -m pytest`:
+
+```text
 ============================= test session starts ==============================
 platform darwin -- Python 3.14.6, pytest-9.1.1, pluggy-1.7.0
 rootdir: /Users/nirutachataut/ai110-module2show-pawpal-starter
 configfile: pytest.ini
 plugins: anyio-4.15.1
-collected 18 items
+collected 22 items
 
-tests/test_pawpal.py ..................                                  [100%]
+tests/test_pawpal.py ......................                              [100%]
 
-============================== 18 passed in 0.01s ===============================
+============================== 22 passed in 0.03s ==============================
 ```
+
+### Confidence Level
+
+Confidence Level: 4/5 stars
+
+All 22 backend tests pass and cover the main scheduling behaviors and listed
+edge cases. A Streamlit `AppTest` smoke check also confirmed the app renders
+and initializes the Owner in session state. This is not a full interactive
+browser test, and the tests do not cover every real-world scheduling case
+(including conflicts that cross midnight), so the result is not rated 5/5.
 
 ## Smarter Scheduling
 

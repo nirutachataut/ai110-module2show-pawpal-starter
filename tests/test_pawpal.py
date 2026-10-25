@@ -24,6 +24,21 @@ def test_task_addition():
     assert len(pet.get_tasks()) == initial_task_count + 1
 
 
+def test_owner_can_add_pet():
+    owner = Owner(name="Alex", available_time=60, preferences=[])
+    buddy = Pet(name="Buddy", species="dog")
+
+    owner.add_pet(buddy)
+
+    assert owner.pets == [buddy]
+
+
+def test_pet_with_no_tasks_returns_an_empty_task_list():
+    pet = Pet(name="Buddy", species="dog")
+
+    assert pet.get_tasks() == []
+
+
 def test_sort_by_time_places_untimed_tasks_last():
     owner = Owner(name="Alex", available_time=60, preferences=[])
     scheduler = Scheduler(owner)
@@ -37,6 +52,17 @@ def test_sort_by_time_places_untimed_tasks_last():
     assert sorted_tasks == [early_task, late_task, untimed_task]
     assert original_tasks == [late_task, untimed_task, early_task]
     assert scheduler.sort_tasks([early_task, late_task]) == [late_task, early_task]
+
+
+def test_sort_by_time_keeps_equal_time_tasks_in_their_original_order():
+    scheduler = Scheduler(Owner(name="Alex", available_time=60, preferences=[]))
+    first_task = Task("First", 10, 1, scheduled_time="08:00")
+    second_task = Task("Second", 10, 1, scheduled_time="08:00")
+
+    assert scheduler.sort_by_time([first_task, second_task]) == [
+        first_task,
+        second_task,
+    ]
 
 
 def test_sort_by_time_places_invalid_times_last_and_handles_empty_lists():
@@ -72,6 +98,20 @@ def test_filter_tasks_by_pet_and_completion_status():
     assert owner.filter_tasks(completed=False) == [pending_task, luna_task]
     assert owner.filter_tasks(pet_name="Buddy", completed=False) == [pending_task]
     assert owner.get_all_tasks() == original_tasks
+
+
+def test_filter_tasks_without_filters_returns_all_owner_tasks():
+    owner = Owner(name="Alex", available_time=60, preferences=[])
+    buddy = Pet(name="Buddy", species="dog")
+    luna = Pet(name="Luna", species="cat")
+    buddy_task = Task("Walk Buddy", 30, 3)
+    luna_task = Task("Groom Luna", 20, 2)
+    buddy.add_task(buddy_task)
+    luna.add_task(luna_task)
+    owner.add_pet(buddy)
+    owner.add_pet(luna)
+
+    assert owner.filter_tasks() == [buddy_task, luna_task]
 
 
 def test_filter_tasks_does_not_return_duplicate_task_references():
@@ -253,6 +293,15 @@ def test_detect_conflicts_ignores_completed_and_invalid_tasks():
     )
     completed_task.mark_completed()
     buddy.add_task(completed_task)
+    buddy.add_task(
+        Task(
+            "Pending overlap",
+            10,
+            2,
+            scheduled_time="09:15",
+            due_date=date(2025, 1, 1),
+        )
+    )
     buddy.add_task(
         Task("Missing time", 30, 2, due_date=date(2025, 1, 1))
     )
