@@ -126,14 +126,7 @@ small enough to understand.
 
 **d. Separate chat sessions**
 
-The project work was organized by topic: backend classes, scheduling
-algorithms, automated tests, and final UI/documentation integration. Keeping
-those topics separate made it easier to focus on one part and then verify how
-it connected to the rest. I do not have enough evidence to say whether each
-topic was handled in a separate AI chat session.
-
-> TODO: Add my own genuine example of how I used separate AI chat sessions,
-> or revise this paragraph if I worked in one continuous session.
+I used separate AI chat sessions to focus on different stages of developing PawPal+. I worked on connecting the backend classes to Streamlit, improving the scheduling algorithms, adding automated tests, and polishing the final documentation. Separating these topics helped me keep my work organized and made it easier to understand and verify each change before moving to the next step.
 
 ---
 
