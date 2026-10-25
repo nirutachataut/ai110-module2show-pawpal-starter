@@ -68,11 +68,11 @@ I made these changes because the methods were only placeholders and could not pe
 
 **a. Constraints and priorities**
 
-The scheduler gathers tasks from all of the owner's pets. It skips completed tasks and tasks with non-positive durations, sorts the remaining tasks by priority, and schedules tasks that fit within the available time. It does not currently use the owner's preferences or task frequency. I treated priority as most important because urgent pet care should come first.
+The scheduler gathers tasks from all of the owner's pets. It skips completed tasks and tasks with non-positive durations, sorts tasks by priority when building the daily plan, and selects tasks that fit within the available time. I also added sorting by scheduled time, filtering by pet name and completion status, and conflict detection for tasks scheduled on the same date. Owner preferences are stored but are not used to build the schedule.
 
 **b. Tradeoffs**
 
-The scheduler handles tasks in priority order, so a lower-priority task may not fit after higher-priority tasks are scheduled. This is a reasonable tradeoff because urgent care should come first, and the plan still respects the owner's available time.
+The daily plan uses priority order rather than scheduled-time order, so a lower-priority task may not fit after higher-priority tasks are selected. This keeps the available-time rule simple and gives higher-priority care preference. Scheduled-time sorting and conflict detection are separate checks; conflict warnings do not change the generated plan. This means users can see overlaps, but the scheduler does not automatically resolve them.
 
 ---
 
@@ -94,11 +94,11 @@ I verified the implementation by running `main.py` and checking the generated da
 
 **a. What you tested**
 
-I tested that a task starts as incomplete and becomes completed after calling `mark_completed()`. I also tested that adding a task increases a pet's task count. These tests check that two basic task behaviors work as expected. The command-line demo also showed the Scheduler creating a plan from tasks belonging to both pets.
+The pytest suite checks task completion and addition, priority and scheduled-time sorting, pet and completion filters, recurring daily and weekly tasks, and scheduling conflicts. The command-line demo also shows tasks from both pets, filtering, recurrence, schedule generation, and a conflict warning.
 
 **b. Confidence**
 
-I am somewhat confident because the demo runs and the two tests pass, but the tests do not directly cover the Scheduler's edge cases. Next, I would test completed tasks, non-positive task durations, no tasks, zero or negative available time, and tasks that do not fit or leave time for a later task.
+I am somewhat confident because the demo runs and the tests cover the main new scheduling behaviors. More tests for available-time edge cases and invalid scheduled dates or times would increase my confidence.
 
 ---
 

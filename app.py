@@ -1,3 +1,5 @@
+from datetime import date, time
+
 import streamlit as st
 
 from pawpal_system import Owner, Pet, Scheduler, Task
@@ -17,6 +19,7 @@ owner = st.session_state.owner
 
 st.session_state.setdefault("daily_plan", [])
 st.session_state.setdefault("plan_explanation", "")
+st.session_state.setdefault("conflict_warnings", [])
 st.session_state.setdefault("owner_name", owner.name)
 st.session_state.setdefault("available_time", owner.available_time)
 st.session_state.setdefault("owner_preferences", owner.preferences)
@@ -76,6 +79,7 @@ if st.button("Add pet"):
         st.success(f"Added {pet.name} to your pets.")
         st.session_state.daily_plan = []
         st.session_state.plan_explanation = ""
+        st.session_state.conflict_warnings = []
     else:
         st.warning("Enter a pet name before adding a pet.")
 
@@ -103,6 +107,18 @@ with col3:
         "Priority", ["low", "medium", "high"], index=2, key="task_priority"
     )
 
+with st.expander("Task schedule and recurrence"):
+    due_date = st.date_input("Due date", value=date.today(), key="task_due_date")
+    scheduled_time = st.time_input(
+        "Scheduled time", value=time(9, 0), key="task_scheduled_time"
+    )
+    frequency = st.selectbox(
+        "Frequency",
+        ["once", "daily", "weekly"],
+        index=1,
+        key="task_frequency",
+    )
+
 selected_pet = None
 if owner.pets:
     selected_pet = st.selectbox(
@@ -120,20 +136,44 @@ if st.button("Add task", disabled=selected_pet is None):
         title=task_title,
         duration_minutes=int(duration),
         priority=priority_values[priority],
+        frequency=frequency,
+        scheduled_time=scheduled_time.strftime("%H:%M"),
+        due_date=due_date,
     )
     owner.pets[selected_pet].add_task(task)
     st.success(f"Added '{task.title}' to {owner.pets[selected_pet].name}'s tasks.")
     st.session_state.daily_plan = []
     st.session_state.plan_explanation = ""
+    st.session_state.conflict_warnings = []
 
 if owner.get_all_tasks():
     st.write("Current tasks:")
     for pet in owner.pets:
         for task in pet.get_tasks():
+            due_date_text = task.due_date.isoformat() if task.due_date else "No due date"
+            scheduled_time_text = task.scheduled_time or "No time"
             st.write(
                 f"- {pet.name} ({pet.species}): {task.title} - "
-                f"{task.duration_minutes} minutes (priority {task.priority})"
+                f"{task.duration_minutes} minutes (priority {task.priority}), "
+                f"{due_date_text} at {scheduled_time_text}, {task.frequency}"
             )
+            if st.button(
+                f"Complete {task.title}",
+                key=f"complete_{id(pet)}_{id(task)}",
+                disabled=task.completed,
+            ):
+                next_task = pet.complete_task(task)
+                if next_task is None:
+                    st.success(f"Marked '{task.title}' complete.")
+                else:
+                    st.success(
+                        f"Marked '{task.title}' complete. "
+                        f"Next occurrence is due {next_task.due_date}."
+                    )
+                st.session_state.daily_plan = []
+                st.session_state.plan_explanation = ""
+                st.session_state.conflict_warnings = []
+                st.rerun()
 else:
     st.info("No tasks yet. Add one above.")
 
@@ -146,6 +186,7 @@ if st.button("Generate schedule"):
     scheduler = Scheduler(owner)
     st.session_state.daily_plan = scheduler.generate_plan()
     st.session_state.plan_explanation = scheduler.explain_plan()
+    st.session_state.conflict_warnings = scheduler.detect_conflicts()
 
 if st.session_state.daily_plan:
     st.write("Today's Schedule")
@@ -158,3 +199,11 @@ if st.session_state.daily_plan:
 if st.session_state.plan_explanation:
     st.write("Plan explanation")
     st.write(st.session_state.plan_explanation)
+
+if "conflict_warnings" in st.session_state:
+    st.write("Scheduling conflict warnings")
+    if st.session_state.conflict_warnings:
+        for warning in st.session_state.conflict_warnings:
+            st.warning(warning)
+    else:
+        st.write("No scheduling conflicts found.")
